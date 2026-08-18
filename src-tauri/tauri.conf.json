@@ -1,0 +1,86 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "skills-manage",
+  "version": "0.10.0",
+  "identifier": "com.iamzhihuix.skillsmanage",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:24200",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "skills-manage",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "iamzhihuix",
+    "homepage": "https://github.com/iamzhihuix/skills-manage",
+    "licenseFile": "../LICENSE",
+    "category": "DeveloperTool",
+    "shortDescription": "AI Agent Skills Manager",
+    "longDescription": "Manage, discover, and install AI agent skills across local platforms from a Tauri desktop app.",
+    "macOS": {
+      "minimumSystemVersion": "10.13"
+    },
+    "windows": {
+      "allowDowngrades": false,
+      "webviewInstallMode": {
+        "silent": true,
+        "type": "embedBootstrapper"
+      },
+      "wix": {
+        "language": "en-US",
+        "upgradeCode": "28d41c68-f4a4-5134-b959-34babea58f7f"
+      }
+    },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false,
+        "files": {
+          "usr/share/metainfo/com.iamzhihuix.skillsmanage.metainfo.xml": "bundle/linux/com.iamzhihuix.skillsmanage.metainfo.xml"
+        }
+      },
+      "deb": {
+        "desktopTemplate": "bundle/linux/skills-manage.desktop.hbs",
+        "section": "devel",
+        "priority": "optional",
+        "files": {
+          "/usr/share/metainfo/com.iamzhihuix.skillsmanage.metainfo.xml": "bundle/linux/com.iamzhihuix.skillsmanage.metainfo.xml"
+        }
+      },
+      "rpm": {
+        "desktopTemplate": "bundle/linux/skills-manage.desktop.hbs",
+        "release": "1",
+        "files": {
+          "/usr/share/metainfo/com.iamzhihuix.skillsmanage.metainfo.xml": "bundle/linux/com.iamzhihuix.skillsmanage.metainfo.xml"
+        }
+      }
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "sql": {
+      "preload": []
+    }
+  }
+}

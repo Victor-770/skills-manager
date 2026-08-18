@@ -1,0 +1,8 @@
+allowBuilds:
+  esbuild: true
+  msw: true
+onlyBuiltDependencies:
+  - esbuild
+  - msw
+  - better-sqlite3
+  - "@tailwindcss/oxide"
