@@ -4,24 +4,37 @@
 
 [中文文档](README_CN.md)
 
+> **Attribution & Origin**
+>
+> This project is based on the open-source project [iamzhihuix/skills-manage](https://github.com/iamzhihuix/skills-manage).
+
 > **Disclaimer**
 >
-> `skills-manage` is an independent, unofficial desktop application for managing local skill directories and importing public skill metadata. It is not affiliated with, endorsed by, or sponsored by Anthropic, OpenAI, GitHub, MiniMax, or any other supported platform, publisher, or trademark owner.
+> `skills-manage` is an independent desktop application for managing local skill directories and importing public skill metadata. It is not affiliated with, endorsed by, or sponsored by Anthropic, OpenAI, GitHub, MiniMax, or any other supported platform, publisher, or trademark owner.
 
 ## Overview
 
 `skills-manage` follows the [Agent Skills](https://github.com/anthropics/agent-skills) open pattern and uses `~/.agents/skills/` as the canonical central directory. Skills can then be installed to individual platforms through symlinks, so one source of truth can drive multiple AI coding tools.
 
-## Highlights
+## Extended Features in this Fork
 
-- Central skill library plus per-platform install and uninstall flows.
-- Claude Code can surface native skills and read-only marketplace plugin skills in one platform view.
-- Full skill detail view with Markdown preview, raw source view, and AI explanation generation.
-- Collections for organizing skills and batch-installing them to platforms.
-- Discover scan for project-level skill libraries, including an Obsidian sidebar category for vault skills (`.skills/`, `.agents/skills/`, `.claude/skills/`).
-- Marketplace browsing and GitHub repository import with authenticated requests and retry fallback.
-- Fast search for large skill libraries with deferred queries, lazy indexing, and virtualization.
-- Bilingual UI, Catppuccin themes, accent colors, onboarding, and responsive navigation.
+This version introduces powerful project-level skill management and batch workflow capabilities:
+
+- **Project-to-Project Skills Copy (跨项目技能复制)**: Easily replicate platform skills from one project directory to another target project, with visual diff preview and conflict handling (skip / overwrite).
+- **Permanent Project Skill Deletion (项目技能永久删除)**: Delete discovered project skills directly from disk (Shift+Delete mode) with safety confirmation prompts.
+- **Direct Collection Management for Project Skills (项目技能直接加入技能集)**: Add discovered project skills directly into skill collections without forcibly copying or polluting the central library (`~/.agents/skills/`).
+- **Batch Selection & Multi-Collection Adding (批量选择与批量加入技能集)**: Multi-select discovered project skills and batch-add them to one or multiple skill collections at once, with instant collection creation support.
+
+## Key Highlights
+
+- **Central & Platform Management**: Central skill library plus per-platform install and uninstall flows.
+- **Claude Code Integration**: Surface native skills and read-only marketplace plugin skills in one platform view.
+- **Full Skill Detail Viewer**: Markdown preview, raw source view, and AI explanation generation.
+- **Skill Collections**: Organize skills into collections and batch-install them to platforms or project folders.
+- **Project Discovery (Discover Scan)**: Scan project-level skill libraries across local directories, including Obsidian vaults (`.skills/`, `.agents/skills/`, `.claude/skills/`).
+- **Marketplace & GitHub Import**: Browse community skills and import directly from GitHub repositories.
+- **Fast Search**: Optimized for large skill libraries with deferred queries, lazy indexing, and virtualization.
+- **Modern UI**: Bilingual interface (English / Chinese), Catppuccin themes, accent color customization, and responsive navigation.
 
 ## Screenshots
 
@@ -51,28 +64,7 @@
 
 ## Download
 
-- Latest release: <https://github.com/iamzhihuix/skills-manage/releases/latest>
-- Current prebuilt packages: Apple Silicon macOS (`.dmg` and `.app.zip`)
-- Other platforms: run from source for now
-
-### macOS Unsigned Build
-
-The current public macOS build is not notarized. If macOS shows a warning such as:
-
-![macOS damaged app warning](images/app-damaged.png)
-
-- `"skills-manage" is damaged and can't be opened`
-- `"skills-manage" cannot be opened because Apple could not verify it`
-
-the app is usually not actually corrupted; it is being blocked by Gatekeeper quarantine on an unsigned build.
-
-After moving the app to `/Applications`, run:
-
-```bash
-xattr -dr com.apple.quarantine "/Applications/skills-manage.app"
-```
-
-Then launch the app again from Finder. If your app is stored somewhere else, replace the path with the actual `.app` path.
+- Original upstream repository: <https://github.com/iamzhihuix/skills-manage>
 
 ## Supported Platforms
 
@@ -134,7 +126,7 @@ Custom platforms can be added through Settings.
 | Database | SQLite via sqlx (WAL mode) |
 | Routing | react-router-dom v7 |
 
-## Development
+## Development & Build
 
 ### Prerequisites
 
@@ -156,6 +148,14 @@ pnpm tauri dev
 ```
 
 The Vite dev server runs on port `24200`.
+
+### Build Distribution Package
+
+```bash
+pnpm tauri build
+```
+
+Generated installer packages will be located in `src-tauri/target/release/bundle/`.
 
 ### Validation
 
@@ -194,27 +194,6 @@ skills-manage/
 ## Database
 
 The SQLite database lives at `~/.skillsmanage/db.sqlite` and is initialized automatically on first launch.
-
-## Changelog
-
-- English: [CHANGELOG.md](CHANGELOG.md)
-- Chinese: [CHANGELOG.zh.md](CHANGELOG.zh.md)
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, validation commands, and pull request expectations.
-
-## Community
-
-Join the Discord community: <https://discord.gg/fuGURex5fV>
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for vulnerability reporting and data-handling notes.
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=iamzhihuix/skills-manage&type=Date)](https://www.star-history.com/#iamzhihuix/skills-manage&Date)
 
 ## License
 
