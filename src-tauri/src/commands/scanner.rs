@@ -737,8 +737,8 @@ pub async fn scan_all_skills(state: State<'_, AppState>) -> Result<ScanResult, S
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::commands::linker::create_symlink;
     use std::fs;
-    use std::os::unix::fs::symlink;
     use tempfile::TempDir;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -925,7 +925,7 @@ mod tests {
 
         // Create a symlink pointing to it
         let link_path = tmp.path().join("linked-skill");
-        symlink(&target_dir, &link_path).expect("failed to create symlink");
+        create_symlink(&target_dir, &link_path).expect("failed to create symlink");
 
         let (kind, sym_target) = detect_link_type(&link_path, false);
         assert_eq!(kind, "symlink");
@@ -941,7 +941,7 @@ mod tests {
         let target_dir = tmp.path().join("target");
         fs::create_dir_all(&target_dir).unwrap();
         let link_path = tmp.path().join("link");
-        symlink(&target_dir, &link_path).unwrap();
+        create_symlink(&target_dir, &link_path).unwrap();
 
         // Even in central context, a symlink is a symlink
         let (kind, _) = detect_link_type(&link_path, true);
@@ -1081,7 +1081,7 @@ mod tests {
 
         // Symlink it into the agent skills dir
         let link = skills_dir.join("my-skill");
-        symlink(central_dir.join("my-skill"), &link).unwrap();
+        create_symlink(&central_dir.join("my-skill"), &link).unwrap();
 
         let skills = scan_directory(&skills_dir, false);
         assert_eq!(skills.len(), 1);
@@ -1142,8 +1142,8 @@ mod tests {
             "using-superpowers",
             &valid_skill_md("Using Superpowers", "Symlinked bundle skill"),
         );
-        symlink(&target, root.join("superpowers")).unwrap();
-        symlink(&root, target.join("loop-back")).unwrap();
+        create_symlink(&target, &root.join("superpowers")).unwrap();
+        create_symlink(&root, &target.join("loop-back")).unwrap();
 
         let skills = scan_skill_root(
             &root,

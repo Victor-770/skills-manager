@@ -972,6 +972,16 @@ describe("discoverStore", () => {
     expect(state.selectedSkillIds.has("skill-3")).toBe(true);
   });
 
+  it("selectSkillRange adds range of skill IDs to selection", () => {
+    useDiscoverStore.setState({ selectedSkillIds: new Set(["skill-0"]) });
+    useDiscoverStore.getState().selectSkillRange(["skill-1", "skill-2", "skill-3"]);
+    const state = useDiscoverStore.getState();
+    expect(state.selectedSkillIds.has("skill-0")).toBe(true);
+    expect(state.selectedSkillIds.has("skill-1")).toBe(true);
+    expect(state.selectedSkillIds.has("skill-2")).toBe(true);
+    expect(state.selectedSkillIds.has("skill-3")).toBe(true);
+  });
+
   it("clearSelection removes all selected IDs", () => {
     useDiscoverStore.setState({ selectedSkillIds: new Set(["skill-1", "skill-2"]) });
     useDiscoverStore.getState().clearSelection();

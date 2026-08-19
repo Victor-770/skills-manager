@@ -43,12 +43,14 @@ export function SkillPickerDialog({
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkillIds, setSelectedSkillIds] = useState<Set<string>>(new Set());
+  const [lastClickedSkillId, setLastClickedSkillId] = useState<string | null>(null);
 
   // Load central skills when dialog opens.
   useEffect(() => {
     if (open) {
       setSearchQuery("");
       setSelectedSkillIds(new Set());
+      setLastClickedSkillId(null);
       setError(null);
       loadSkills();
     }
@@ -80,11 +82,30 @@ export function SkillPickerDialog({
     return list;
   }, [skills, existingSkillIds, searchQuery]);
 
-  function handleToggle(skillId: string, checked: boolean) {
+  function handleToggle(skillId: string, event?: React.MouseEvent) {
+    if (event?.shiftKey && lastClickedSkillId) {
+      const lastIdx = filteredSkills.findIndex((s) => s.id === lastClickedSkillId);
+      const currentIdx = filteredSkills.findIndex((s) => s.id === skillId);
+      if (lastIdx !== -1 && currentIdx !== -1) {
+        const start = Math.min(lastIdx, currentIdx);
+        const end = Math.max(lastIdx, currentIdx);
+        const rangeIds = filteredSkills.slice(start, end + 1).map((s) => s.id);
+        setSelectedSkillIds((prev) => {
+          const next = new Set(prev);
+          for (const id of rangeIds) {
+            next.add(id);
+          }
+          return next;
+        });
+        return;
+      }
+    }
+
+    setLastClickedSkillId(skillId);
     setSelectedSkillIds((prev) => {
       const next = new Set(prev);
-      if (checked) next.add(skillId);
-      else next.delete(skillId);
+      if (next.has(skillId)) next.delete(skillId);
+      else next.add(skillId);
       return next;
     });
   }
@@ -95,6 +116,7 @@ export function SkillPickerDialog({
 
   const handleClearSelection = useCallback(() => {
     setSelectedSkillIds(new Set());
+    setLastClickedSkillId(null);
   }, []);
 
   async function handleAdd() {
@@ -188,12 +210,16 @@ export function SkillPickerDialog({
                 return (
                   <div
                     key={skill.id}
-                    className="flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-hover-bg/20 cursor-pointer"
-                    onClick={() => handleToggle(skill.id, !isChecked)}
+                    className="flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-hover-bg/20 cursor-pointer select-none"
+                    onClick={(e) => handleToggle(skill.id, e)}
                   >
                     <Checkbox
                       checked={isChecked}
-                      onCheckedChange={(checked) => handleToggle(skill.id, !!checked)}
+                      onCheckedChange={() => {}}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggle(skill.id, e);
+                      }}
                       aria-label={skill.name}
                       className="mt-0.5"
                     />

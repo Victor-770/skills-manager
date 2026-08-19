@@ -175,4 +175,30 @@ describe("UnifiedSkillCard platform toggles", () => {
     expect(onManagePlatforms).toHaveBeenCalledTimes(1);
     expect(screen.getByText("+3")).toBeInTheDocument();
   });
+
+  it("triggers checkbox onChange when clicking blank area of the card", () => {
+    const onCheckboxChange = vi.fn();
+    const onDetail = vi.fn();
+
+    render(
+      <UnifiedSkillCard
+        name="test-skill"
+        description="This is a test skill description"
+        checkbox={{
+          checked: false,
+          onChange: onCheckboxChange,
+        }}
+        onDetail={onDetail}
+      />
+    );
+
+    // Clicking description (blank area) should trigger checkbox onChange
+    fireEvent.click(screen.getByText("This is a test skill description"));
+    expect(onCheckboxChange).toHaveBeenCalledTimes(1);
+    expect(onDetail).not.toHaveBeenCalled();
+
+    // Clicking title button should trigger onDetail, not checkbox onChange
+    fireEvent.click(screen.getByText("test-skill"));
+    expect(onDetail).toHaveBeenCalledTimes(1);
+  });
 });

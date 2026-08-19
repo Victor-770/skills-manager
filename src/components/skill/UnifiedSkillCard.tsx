@@ -91,7 +91,7 @@ export interface UnifiedSkillCardProps {
   onClick?: () => void;
 
   // ── discover variant ──
-  checkbox?: { checked: boolean; onChange: () => void };
+  checkbox?: { checked: boolean; onChange: (e?: React.MouseEvent) => void };
   isCentral?: boolean;
   platformBadge?: { id: string; name: string };
   projectBadge?: string;
@@ -239,10 +239,18 @@ export function UnifiedSkillCard(props: UnifiedSkillCardProps) {
     <div
       className={cn(
         "rounded-xl bg-card ring-1 ring-border shadow-sm p-3 flex flex-col transition-colors",
+        hasCheckbox && "cursor-pointer select-none",
         checkbox?.checked && "ring-primary/40 bg-primary/5",
         isLoading && "opacity-50",
         className
       )}
+      onClick={hasCheckbox ? (e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest("button, a, input, [role='button'], [data-ignore-card-click]")) {
+          return;
+        }
+        checkbox.onChange(e);
+      } : undefined}
     >
       <div className="flex items-start gap-2.5">
         {/* Optional checkbox (discover) */}
@@ -250,7 +258,11 @@ export function UnifiedSkillCard(props: UnifiedSkillCardProps) {
           <div className="pt-0.5">
             <Checkbox
               checked={checkbox.checked}
-              onCheckedChange={checkbox.onChange}
+              onCheckedChange={() => {}}
+              onClick={(e) => {
+                e.stopPropagation();
+                checkbox.onChange(e);
+              }}
               aria-label={t("discover.selectSkill")}
             />
           </div>

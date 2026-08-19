@@ -1544,16 +1544,18 @@ pub async fn delete_skills_not_in_scope(
     found_skill_ids: &[String],
 ) -> Result<(), String> {
     if found_skill_ids.is_empty() {
-        // Nothing found — delete all installation records first, then all skills.
+        // Nothing found — delete all installation records first, then all skills not in collections.
         sqlx::query("DELETE FROM skill_installations")
             .execute(pool)
             .await
             .map_err(|e| e.to_string())?;
-        return sqlx::query("DELETE FROM skills")
-            .execute(pool)
-            .await
-            .map(|_| ())
-            .map_err(|e| e.to_string());
+        return sqlx::query(
+            "DELETE FROM skills WHERE id NOT IN (SELECT skill_id FROM collection_skills)",
+        )
+        .execute(pool)
+        .await
+        .map(|_| ())
+        .map_err(|e| e.to_string());
     }
 
     let placeholders = found_skill_ids
@@ -1573,8 +1575,11 @@ pub async fn delete_skills_not_in_scope(
     }
     q.execute(pool).await.map_err(|e| e.to_string())?;
 
-    // Remove the stale skills themselves.
-    let skill_sql = format!("DELETE FROM skills WHERE id NOT IN ({})", placeholders);
+    // Remove the stale skills themselves, preserving any skills belonging to collections.
+    let skill_sql = format!(
+        "DELETE FROM skills WHERE id NOT IN ({}) AND id NOT IN (SELECT skill_id FROM collection_skills)",
+        placeholders
+    );
     let mut q2 = sqlx::query(&skill_sql);
     for id in found_skill_ids {
         q2 = q2.bind(id.as_str());
@@ -2568,6 +2573,41 @@ mod tests {
 
         let empty = get_skills_by_agent(&pool, "codex").await.unwrap();
         assert!(empty.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_delete_skills_not_in_scope_preserves_collection_skills() {
+        let pool = setup_test_db().await;
+
+        // 1. Skill found on disk
+        let found_skill = make_skill("found-skill", "Found Skill", true);
+        upsert_skill(&pool, &found_skill).await.unwrap();
+
+        // 2. Skill not found on disk, but in a collection
+        let collection_skill = make_skill("col-skill", "Collection Skill", false);
+        upsert_skill(&pool, &collection_skill).await.unwrap();
+        let col = create_collection(&pool, "Test Collection", None).await.unwrap();
+        add_skill_to_collection(&pool, &col.id, "col-skill").await.unwrap();
+
+        // 3. Stale skill: not found on disk, not in any collection
+        let stale_skill = make_skill("stale-skill", "Stale Skill", false);
+        upsert_skill(&pool, &stale_skill).await.unwrap();
+
+        // Run reconciliation with only "found-skill" found
+        delete_skills_not_in_scope(&pool, &[found_skill.id.clone()]).await.unwrap();
+
+        // Assertions:
+        // found-skill must still exist
+        assert!(get_skill_by_id(&pool, "found-skill").await.unwrap().is_some());
+        // col-skill must still exist because it is in a collection
+        assert!(get_skill_by_id(&pool, "col-skill").await.unwrap().is_some());
+        // stale-skill must be deleted
+        assert!(get_skill_by_id(&pool, "stale-skill").await.unwrap().is_none());
+
+        // Collection skills retrieval must still return col-skill
+        let col_skills = get_collection_skills(&pool, &col.id).await.unwrap();
+        assert_eq!(col_skills.len(), 1);
+        assert_eq!(col_skills[0].id, "col-skill");
     }
 
     // ── Agents ────────────────────────────────────────────────────────────────

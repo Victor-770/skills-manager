@@ -133,6 +133,7 @@ interface DiscoverState {
   setPlatformFilter: (platformId: string | null) => void;
   setSearchQuery: (query: string) => void;
   toggleSkillSelection: (skillId: string) => void;
+  selectSkillRange: (skillIds: string[]) => void;
   selectAllVisible: (skillIds: string[]) => void;
   clearSelection: () => void;
   clearError: () => void;
@@ -652,6 +653,16 @@ export const useDiscoverStore = create<DiscoverState>((set, get) => ({
         newSelection.delete(skillId);
       } else {
         newSelection.add(skillId);
+      }
+      return { selectedSkillIds: newSelection };
+    });
+  },
+
+  selectSkillRange: (skillIds) => {
+    set((state) => {
+      const newSelection = new Set(state.selectedSkillIds);
+      for (const id of skillIds) {
+        newSelection.add(id);
       }
       return { selectedSkillIds: newSelection };
     });

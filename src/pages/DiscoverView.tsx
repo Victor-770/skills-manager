@@ -122,6 +122,7 @@ export function DiscoverView() {
     (s) => s.deleteDiscoveredSkillPermanently
   );
   const toggleSkillSelection = useDiscoverStore((s) => s.toggleSkillSelection);
+  const selectSkillRange = useDiscoverStore((s) => s.selectSkillRange);
   const clearSelection = useDiscoverStore((s) => s.clearSelection);
   const loadScanRoots = useDiscoverStore((s) => s.loadScanRoots);
 
@@ -129,6 +130,7 @@ export function DiscoverView() {
   const refreshCounts = usePlatformStore((s) => s.refreshCounts);
 
   // Local state
+  const [lastClickedSkillId, setLastClickedSkillId] = useState<string | null>(null);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
   const [isAddToCollectionOpen, setIsAddToCollectionOpen] = useState(false);
@@ -334,6 +336,26 @@ export function DiscoverView() {
     setAddToCollectionSkills([skill]);
     setIsAddToCollectionOpen(true);
   }, []);
+
+  const handleToggleSkillSelection = useCallback(
+    (skillId: string, e?: React.MouseEvent) => {
+      if (e?.shiftKey && lastClickedSkillId) {
+        const lastIdx = displayedSkills.findIndex((s) => s.id === lastClickedSkillId);
+        const currentIdx = displayedSkills.findIndex((s) => s.id === skillId);
+        if (lastIdx !== -1 && currentIdx !== -1) {
+          const start = Math.min(lastIdx, currentIdx);
+          const end = Math.max(lastIdx, currentIdx);
+          const rangeIds = displayedSkills.slice(start, end + 1).map((s) => s.id);
+          selectSkillRange(rangeIds);
+          return;
+        }
+      }
+
+      setLastClickedSkillId(skillId);
+      toggleSkillSelection(skillId);
+    },
+    [displayedSkills, lastClickedSkillId, selectSkillRange, toggleSkillSelection]
+  );
 
   const handleBatchAddToCollection = useCallback(() => {
     if (selectedDiscoveredSkills.length === 0) return;
@@ -697,7 +719,7 @@ export function DiscoverView() {
                         description={skill.description}
                         checkbox={{
                           checked: selectedSkillIds.has(skill.id),
-                          onChange: () => toggleSkillSelection(skill.id),
+                          onChange: (e) => handleToggleSkillSelection(skill.id, e),
                         }}
                         isCentral={skill.is_already_central}
                         platformBadge={{ id: skill.platform_id, name: skill.platform_name }}
@@ -731,7 +753,7 @@ export function DiscoverView() {
                         description={skill.description}
                         checkbox={{
                           checked: selectedSkillIds.has(skill.id),
-                          onChange: () => toggleSkillSelection(skill.id),
+                          onChange: (e) => handleToggleSkillSelection(skill.id, e),
                         }}
                         isCentral={skill.is_already_central}
                         platformBadge={{ id: skill.platform_id, name: skill.platform_name }}
@@ -808,7 +830,10 @@ export function DiscoverView() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={clearSelection}
+              onClick={() => {
+                clearSelection();
+                setLastClickedSkillId(null);
+              }}
             >
               {t("discover.deselectAll")}
             </Button>

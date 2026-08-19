@@ -53,6 +53,7 @@ export function AddDiscoveredSkillToCollectionDialog({
   );
 
   const [selectedCollectionIds, setSelectedCollectionIds] = useState<Set<string>>(new Set());
+  const [lastClickedCollectionId, setLastClickedCollectionId] = useState<string | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionError, setExecutionError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -71,14 +72,34 @@ export function AddDiscoveredSkillToCollectionDialog({
     if (!open) return;
     loadCollections();
     setSelectedCollectionIds(new Set());
+    setLastClickedCollectionId(null);
     setExecutionError(null);
   }, [open, loadCollections]);
 
-  function handleToggleCollection(collectionId: string, checked: boolean) {
+  function handleToggleCollection(collectionId: string, event?: React.MouseEvent) {
+    if (event?.shiftKey && lastClickedCollectionId) {
+      const lastIdx = collections.findIndex((c) => c.id === lastClickedCollectionId);
+      const currentIdx = collections.findIndex((c) => c.id === collectionId);
+      if (lastIdx !== -1 && currentIdx !== -1) {
+        const start = Math.min(lastIdx, currentIdx);
+        const end = Math.max(lastIdx, currentIdx);
+        const rangeIds = collections.slice(start, end + 1).map((c) => c.id);
+        setSelectedCollectionIds((prev) => {
+          const next = new Set(prev);
+          for (const id of rangeIds) {
+            next.add(id);
+          }
+          return next;
+        });
+        return;
+      }
+    }
+
+    setLastClickedCollectionId(collectionId);
     setSelectedCollectionIds((prev) => {
       const next = new Set(prev);
-      if (checked) next.add(collectionId);
-      else next.delete(collectionId);
+      if (next.has(collectionId)) next.delete(collectionId);
+      else next.add(collectionId);
       return next;
     });
   }
@@ -172,14 +193,16 @@ export function AddDiscoveredSkillToCollectionDialog({
                   return (
                     <div
                       key={collection.id}
-                      className="flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-hover-bg/20 cursor-pointer"
-                      onClick={() => handleToggleCollection(collection.id, !isChecked)}
+                      className="flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-hover-bg/20 cursor-pointer select-none"
+                      onClick={(e) => handleToggleCollection(collection.id, e)}
                     >
                       <Checkbox
                         checked={isChecked}
-                        onCheckedChange={(checked) =>
-                          handleToggleCollection(collection.id, !!checked)
-                        }
+                        onCheckedChange={() => {}}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleCollection(collection.id, e);
+                        }}
                         aria-label={collection.name}
                         className="mt-0.5"
                       />

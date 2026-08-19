@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use tauri::{Emitter, State};
 
+use crate::commands::linker::remove_symlink;
 use crate::db::{self, DbPool};
 use crate::path_utils::{central_skills_dir, path_to_string, resolve_home_dir};
 use crate::AppState;
@@ -1863,7 +1864,7 @@ fn remove_existing_path(path: &Path) -> Result<(), String> {
     match std::fs::symlink_metadata(path) {
         Ok(meta) => {
             if meta.file_type().is_symlink() {
-                std::fs::remove_file(path).map_err(|e| {
+                remove_symlink(path).map_err(|e| {
                     format!("Failed to remove symlink '{}': {}", path.display(), e)
                 })
             } else if meta.is_dir() {
@@ -2601,7 +2602,7 @@ async fn delete_discovered_skill_permanently_impl(
     match std::fs::symlink_metadata(&dir) {
         Ok(meta) => {
             if meta.file_type().is_symlink() {
-                std::fs::remove_file(&dir).map_err(|e| {
+                remove_symlink(&dir).map_err(|e| {
                     format!("Failed to remove symlink '{}': {}", dir.display(), e)
                 })?;
             } else if meta.is_dir() {

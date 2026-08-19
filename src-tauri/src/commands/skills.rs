@@ -8,7 +8,7 @@ use tauri::State;
 use crate::db::{self, Collection, DbPool, SkillForAgent};
 use crate::AppState;
 
-use super::linker::uninstall_skill_from_agent_impl;
+use super::linker::{remove_symlink, uninstall_skill_from_agent_impl};
 use super::scanner::{scan_skill_root, ScanDirectoryOptions};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -270,7 +270,7 @@ fn remove_central_skill_dir(target: &Path) -> Result<(), String> {
     })?;
 
     if metadata.file_type().is_symlink() {
-        std::fs::remove_file(target)
+        remove_symlink(target)
             .map_err(|e| format!("Failed to remove central skill symlink: {}", e))
     } else if metadata.is_dir() {
         std::fs::remove_dir_all(target)
@@ -453,7 +453,7 @@ fn remove_central_bundle_target(target: &CentralBundleTarget) -> Result<(), Stri
     })?;
 
     if metadata.file_type().is_symlink() {
-        std::fs::remove_file(&target.delete_path)
+        remove_symlink(&target.delete_path)
             .map_err(|e| format!("Failed to remove Central bundle symlink: {}", e))
     } else if metadata.is_dir() {
         std::fs::remove_dir_all(&target.delete_path)

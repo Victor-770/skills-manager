@@ -86,6 +86,26 @@ pub fn create_symlink(_target: &Path, _link: &Path) -> Result<(), String> {
     Err("Symlink creation is only supported on Unix systems".to_string())
 }
 
+/// Safely removes a symbolic link across Unix and Windows.
+///
+/// On Windows, directory symlinks and directory junctions (created with `symlink_dir`)
+/// cannot be removed with `remove_file` (DeleteFileW returns ERROR_ACCESS_DENIED, os error 5).
+/// They must be removed with `remove_dir` (RemoveDirectoryW), which only deletes the link
+/// and leaves target contents untouched.
+pub fn remove_symlink(path: &Path) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        if std::fs::remove_file(path).is_ok() {
+            return Ok(());
+        }
+        std::fs::remove_dir(path).map_err(|e| format!("Failed to remove symlink: {}", e))
+    }
+    #[cfg(not(windows))]
+    {
+        std::fs::remove_file(path).map_err(|e| format!("Failed to remove symlink: {}", e))
+    }
+}
+
 pub fn symlink_target_path(from_dir: &Path, to_path: &Path) -> PathBuf {
     #[cfg(windows)]
     {
@@ -295,8 +315,7 @@ pub async fn install_skill_to_agent_impl(
     match std::fs::symlink_metadata(&symlink_path) {
         Ok(meta) if meta.file_type().is_symlink() => {
             // Remove stale symlink so we can replace it.
-            std::fs::remove_file(&symlink_path)
-                .map_err(|e| format!("Failed to remove existing symlink: {}", e))?;
+            remove_symlink(&symlink_path)?;
         }
         Ok(meta) if meta.is_dir() => {
             return Err(format!(
@@ -408,8 +427,7 @@ pub async fn install_skill_to_agent_copy_impl(
     match std::fs::symlink_metadata(&target_path) {
         Ok(meta) if meta.file_type().is_symlink() => {
             // Remove stale symlink so we can replace it with a real copy.
-            std::fs::remove_file(&target_path)
-                .map_err(|e| format!("Failed to remove existing symlink: {}", e))?;
+            remove_symlink(&target_path)?;
         }
         Ok(meta) if meta.is_dir() => {
             return Err(format!(
@@ -478,8 +496,7 @@ pub async fn uninstall_skill_from_agent_impl(
     match std::fs::symlink_metadata(&install_path) {
         Ok(meta) if meta.file_type().is_symlink() => {
             // Always safe to remove symlinks.
-            std::fs::remove_file(&install_path)
-                .map_err(|e| format!("Failed to remove symlink: {}", e))?;
+            remove_symlink(&install_path)?;
         }
         Ok(meta) if meta.is_dir() => {
             // Only remove real directories that were explicitly installed as copies.
@@ -840,6 +857,7 @@ mod tests {
         assert!(
             link_target
                 .to_string_lossy()
+                .replace('\\', "/")
                 .contains("superpowers/using-superpowers"),
             "symlink should point at nested canonical path, got {:?}",
             link_target

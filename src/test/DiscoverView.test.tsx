@@ -109,6 +109,7 @@ vi.mock("react-i18next", () => ({
         "discover.installToPlatform": "Install to Platform",
         "discover.alreadyCentral": "Already in Central",
         "discover.selected": `${params?.count ?? 0} selected`,
+        "discover.addSelectedToCollection": "Add selected to Collection",
         "discover.installSelectedCentral": "Install selected to Central",
         "discover.deselectAll": "Deselect all",
         "discover.selectSkill": "Select skill",
@@ -278,6 +279,7 @@ const mockLoadScanRoots = vi.fn();
 const mockImportToCentral = vi.fn();
 const mockImportToPlatform = vi.fn();
 const mockToggleSkillSelection = vi.fn();
+const mockSelectSkillRange = vi.fn();
 const mockClearSelection = vi.fn();
 const mockRescan = vi.fn();
 const mockRescanFromDisk = vi.fn();
@@ -315,6 +317,7 @@ function buildDiscoverStoreState(overrides = {}) {
     batchAddDiscoveredSkillsToCollections: vi.fn(),
     deleteDiscoveredSkillPermanently: vi.fn(),
     toggleSkillSelection: mockToggleSkillSelection,
+    selectSkillRange: mockSelectSkillRange,
     clearSelection: mockClearSelection,
     setGroupBy: vi.fn(),
     setPlatformFilter: vi.fn(),
@@ -807,6 +810,28 @@ describe("DiscoverView", () => {
     expect(screen.getByText("Add selected to Collection")).toBeInTheDocument();
     expect(screen.getByText("Install selected to Central")).toBeInTheDocument();
     expect(screen.getByText("Deselect all")).toBeInTheDocument();
+  });
+
+  it("supports shift-clicking to select a range of skills", () => {
+    mockUseDiscoverStore.mockImplementation((selector) =>
+      selector(buildDiscoverStoreState({
+        discoveredProjects: multiProjects,
+      }))
+    );
+
+    const encoded = encodeURIComponent("/home/user/projects/beta");
+    renderDiscoverView(`/discover/${encoded}`);
+
+    // Click description of first skill
+    fireEvent.click(screen.getByText("Beta handler"));
+    expect(mockToggleSkillSelection).toHaveBeenCalledWith("claude-code__beta__beta-skill");
+
+    // Shift-click description of second skill
+    fireEvent.click(screen.getByText("Another beta-only helper"), { shiftKey: true });
+    expect(mockSelectSkillRange).toHaveBeenCalledWith([
+      "claude-code__beta__beta-skill",
+      "claude-code__beta__other-beta",
+    ]);
   });
 
   // ── Install to Central ─────────────────────────────────────────────────────
